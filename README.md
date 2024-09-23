@@ -1,0 +1,1 @@
+# confluent-schema-registry-manager
