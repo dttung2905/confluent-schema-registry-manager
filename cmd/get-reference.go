@@ -63,9 +63,9 @@ func getRefSchemaById(contextName string, subjectName string, versionId string, 
 
 	var url string
 	if contextName == "default" {
-		url = fmt.Sprintf("%s/subjects/%s/versions/%s/referenceBy", srURL, escapedSubjectName, versionId)
+		url = fmt.Sprintf("%s/subjects/%s/versions/%s/referencedby", srURL, escapedSubjectName, versionId)
 	} else {
-		url = fmt.Sprintf("%s/contexts/%s/subjects/%s/versions/%s/referenceBy", srURL, contextName, escapedSubjectName, versionId)
+		url = fmt.Sprintf("%s/contexts/%s/subjects/%s/versions/%s/referencedby", srURL, contextName, escapedSubjectName, versionId)
 	}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -106,6 +106,7 @@ func getSubjectById(contextName string, schemaId string, srAPIKey string, srAPIS
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req.SetBasicAuth(srAPIKey, srAPISecret)
 	if err != nil {
 		log.Fatal(err)
 		return "", err
