@@ -1,4 +1,4 @@
-module confluent-sr-manager
+module confluent-schema-registry-manager
 
 go 1.22.5
 
