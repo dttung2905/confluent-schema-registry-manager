@@ -44,7 +44,7 @@ var getReferenceCmd = &cobra.Command{
 		outputMap := make(map[string]string)
 		for _, id := range referencedByIds {
 			schemaId := fmt.Sprintf("%d", id)
-			schemaName, version, err := getSubjectById(contextName, schemaId, srAPIKey, srAPISecret, srURL)
+			schemaName, version, err := getSubjectAndVersionById(contextName, schemaId, srAPIKey, srAPISecret, srURL)
 			if err != nil {
 				log.Fatal(err)
 				return err
@@ -103,12 +103,12 @@ func getRefSchemaById(contextName string, subjectName string, versionId string, 
 	return referencedBy, nil
 }
 
-func getSubjectById(contextName string, schemaId string, srAPIKey string, srAPISecret string, srURL string) (string, string, error) {
+func getSubjectAndVersionById(contextName string, schemaId string, srAPIKey string, srAPISecret string, srURL string) (string, string, error) {
 	var url string
 	if contextName == "default" {
-		url = fmt.Sprintf("%s/schemas/ids/%s/subjects", srURL, schemaId)
+		url = fmt.Sprintf("%s/schemas/ids/%s/versions", srURL, schemaId)
 	} else {
-		url = fmt.Sprintf("%s/contexts/%s/schemas/ids/%s/subjects", srURL, contextName, schemaId)
+		url = fmt.Sprintf("%s/contexts/%s/schemas/ids/%s/versions", srURL, contextName, schemaId)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
