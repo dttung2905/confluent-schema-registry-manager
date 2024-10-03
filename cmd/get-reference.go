@@ -8,8 +8,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
+
+type VersionByIdResponse struct {
+	Subject string `json:"subject"`
+	Version int    `json:"version"`
+}
 
 var contextName string
 
@@ -38,12 +44,12 @@ var getReferenceCmd = &cobra.Command{
 		outputMap := make(map[string]string)
 		for _, id := range referencedByIds {
 			schemaId := fmt.Sprintf("%d", id)
-			schemaName, err := getSubjectById(contextName, schemaId, srAPIKey, srAPISecret, srURL)
+			schemaName, version, err := getSubjectById(contextName, schemaId, srAPIKey, srAPISecret, srURL)
 			if err != nil {
 				log.Fatal(err)
 				return err
 			}
-			outputMap[schemaId] = schemaName
+			outputMap[schemaId] = schemaName + "-version-" + version
 		}
 		prettyPrintMap(outputMap)
 		return nil
@@ -97,7 +103,7 @@ func getRefSchemaById(contextName string, subjectName string, versionId string, 
 	return referencedBy, nil
 }
 
-func getSubjectById(contextName string, schemaId string, srAPIKey string, srAPISecret string, srURL string) (string, error) {
+func getSubjectById(contextName string, schemaId string, srAPIKey string, srAPISecret string, srURL string) (string, string, error) {
 	var url string
 	if contextName == "default" {
 		url = fmt.Sprintf("%s/schemas/ids/%s/subjects", srURL, schemaId)
@@ -109,13 +115,13 @@ func getSubjectById(contextName string, schemaId string, srAPIKey string, srAPIS
 	req.SetBasicAuth(srAPIKey, srAPISecret)
 	if err != nil {
 		log.Fatal(err)
-		return "", err
+		return "", "", err
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
-		return "", err
+		return "", "", err
 	}
 
 	defer func(Body io.ReadCloser) {
@@ -124,18 +130,24 @@ func getSubjectById(contextName string, schemaId string, srAPIKey string, srAPIS
 
 		}
 	}(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 
+	if err != nil {
+		log.Fatal(err)
+		return "", "", err
+	}
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var subject []string
-	if err = json.NewDecoder(resp.Body).Decode(&subject); err != nil {
-		return "", err
+	var subject []VersionByIdResponse
+	err = json.Unmarshal(bodyBytes, &subject)
+	if err != nil {
+		return "", "", err
 	}
 
 	if len(subject) == 0 {
-		return "", fmt.Errorf("subject is empty")
+		return "", "", fmt.Errorf("subject is empty")
 	}
-	return subject[0], nil
+	return subject[0].Subject, strconv.Itoa(subject[0].Version), nil
 }
